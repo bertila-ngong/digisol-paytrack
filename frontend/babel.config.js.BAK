@@ -1,0 +1,8 @@
+module.exports = function(api) {
+  api.cache(true);
+  return {
+    presets: ['babel-preset-expo'],
+    //  FIX: These two plugins are required for Nativewind and Expo Router to work.
+    plugins: ["nativewind/babel", "expo-router/babel"],
+  };
+};

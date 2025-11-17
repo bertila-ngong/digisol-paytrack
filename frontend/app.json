@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "DigiSol PayTrack",
+    "slug": "digisol-paytrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./app/assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./app/assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#7C3AED"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.digisol.paytrack"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./app/assets/logo.png",
+        "backgroundColor": "#7C3AED"
+      },
+      "package": "com.digisol.paytrack"
+    }
+  }
+}

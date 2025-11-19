@@ -1,0 +1,6 @@
+.env
+/__pycache__ /
+*.pyc
+/envenv/          # <-- (Your original, slightly wrong)
+/.venv/         # <-- FIX: Add the correct name based on your file tree
+/backend/.venv/ # <-- If your .venv is inside backend/ (safer)

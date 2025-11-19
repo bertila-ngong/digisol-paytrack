@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Text,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/shared/Header';
@@ -13,80 +14,75 @@ import SearchBar from '../../components/shared/SearchBar';
 import AccountCard from '../../components/accounts_features/AccountCard';
 import AddAccountModal from '../../components/accounts_features/AddAccountModal';
 
-//  DUMMY DATA - Replace with API calls later
-const DUMMY_ACCOUNTS = [
-  {
-    id: '1',
-    name: 'Jane Doe',
-    email: 'jane@example.com',
-    phone: '+237 671234567',
-    location: 'Douala, Cameroon',
-    accountNumber: 'ACC-00123',
-    amount: '10,000 XAF',
-    dueDate: '2025-12-01',
-    status: 'active',
-    linkedUsers: 2,
-  },
-  {
-    id: '2',
-    name: 'Sunset Apartments',
-    email: 'contact@sunset.cm',
-    phone: '+237 698765432',
-    location: 'Yaoundé, Cameroon',
-    accountNumber: 'ACC-00124',
-    amount: '25,000 XAF',
-    dueDate: '2025-11-20',
-    status: 'overdue',
-    linkedUsers: 3,
-  },
-  {
-    id: '3',
-    name: 'John Smith',
-    email: 'john@example.com',
-    phone: '+237 655123456',
-    location: 'Buea, Cameroon',
-    accountNumber: 'ACC-00125',
-    amount: '15,000 XAF',
-    dueDate: '2025-12-15',
-    status: 'active',
-    linkedUsers: 1,
-  },
-  {
-    id: '4',
-    name: 'Marie Kouam',
-    email: 'marie.kouam@gmail.com',
-    phone: '+237 677889900',
-    location: 'Douala, Cameroon',
-    accountNumber: 'ACC-00126',
-    amount: '20,000 XAF',
-    dueDate: '2025-11-25',
-    status: 'active',
-    linkedUsers: 2,
-  },
-  {
-    id: '5',
-    name: 'Tech Solutions Ltd',
-    email: 'info@techsolutions.cm',
-    phone: '+237 699112233',
-    location: 'Yaoundé, Cameroon',
-    accountNumber: 'ACC-00127',
-    amount: '50,000 XAF',
-    dueDate: '2025-11-15',
-    status: 'overdue',
-    linkedUsers: 4,
-  },
-];
-
 export default function AccountsTab() {
-  const [accounts, setAccounts] = useState(DUMMY_ACCOUNTS);
-  const [filteredAccounts, setFilteredAccounts] = useState(DUMMY_ACCOUNTS);
+  const [accounts, setAccounts] = useState([]);
+  const [filteredAccounts, setFilteredAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Run once on mount
+  useEffect(() => {
+    getServices();
+  }, []);
+
+  // Re-filter when search or data changes
   useEffect(() => {
     filterAccounts();
   }, [searchQuery, accounts]);
+
+  const getServices = async () => {
+    setLoading(true);
+    try {
+      // Ensure this endpoint is correct. If using Android Emulator, use 'http://10.0.2.2:5000...'
+      const response = await fetch('http://127.0.0.1:5000/api/accounts');
+      const data = await response.json();
+
+      console.log("Raw API Data:", data);
+
+      let rawList = [];
+      if (data.accounts) {
+        rawList = data.accounts;
+      } else if (Array.isArray(data)) {
+        rawList = data;
+      }
+
+      // 🛠️ CRITICAL FIX: MAP THE DATABASE STRUCTURE TO UI STRUCTURE
+      // Your DB has data inside 'linked_users', but UI wants it flat.
+      const formattedData = rawList.map((item) => {
+        // Grab the first user from the array, or create an empty object if missing
+        const primaryUser = (item.linked_users && item.linked_users.length > 0) 
+          ? item.linked_users[0] 
+          : {};
+
+        return {
+          id: item.id || Math.random().toString(),
+          // Get specific fields from the ROOT of the document
+          accountNumber: item.account_number || 'N/A',
+          dueDate: item.due_date || 'N/A',
+          
+          // Get specific fields from the NESTED 'linked_users' array
+          name: primaryUser.name || 'Unknown User',
+          email: primaryUser.email || '',
+          phone: primaryUser.phone || '',
+          amount: primaryUser.payment_amount ? `${primaryUser.payment_amount} XAF` : '0 XAF',
+          status: primaryUser.status || 'active',
+          location: primaryUser.location || '',
+          
+          linkedUsersCount: item.linked_users ? item.linked_users.length : 0,
+        };
+      });
+
+      setAccounts(formattedData);
+      // filteredAccounts will be updated by the useEffect hook automatically
+
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      Alert.alert("Error", "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filterAccounts = () => {
     if (searchQuery.trim() === '') {
@@ -94,40 +90,37 @@ export default function AccountsTab() {
     } else {
       const filtered = accounts.filter(
         (account) =>
-          account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          account.accountNumber.toLowerCase().includes(searchQuery.toLowerCase())
+          (account.name && account.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (account.accountNumber && account.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()))
       );
       setFilteredAccounts(filtered);
     }
   };
 
-  const handleRefresh = () => {
-    setLoading(true);
-    // 🔌 Replace with API call: accountsAPI.getAll()
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  };
+  // const handleRefresh = () => {
+  //   getServices();
+  // };
 
   const handleAddAccount = (accountData) => {
-    // 🔌 Replace with API call: accountsAPI.create(accountData)
+    // Ideally, POST to API here. For now, we update local state.
     const newAccount = {
-      id: String(accounts.length + 1),
-      name: accountData.name || '',
+      id: String(Date.now()),
+      name: accountData.name || 'New User',
       email: accountData.email || '',
       phone: accountData.phone || '',
       location: accountData.location || '',
-      accountNumber: accountData.accountNumber || '',
-      amount: accountData.amount || '',
+      accountNumber: accountData.accountNumber || 'N/A', // Fixed key name
+      amount: accountData.amount || '0 XAF',
       dueDate: accountData.dueDate || '',
       status: 'active',
-      linkedUsers: 1,
+      linkedUsersCount: 1,
     };
-    setAccounts([...accounts, newAccount]);
+    setAccounts([newAccount, ...accounts]);
     setModalVisible(false);
     Alert.alert('Success', 'Account created successfully');
   };
 
+  // Calculate stats dynamically
   const overdueCount = accounts.filter(a => a.status === 'overdue').length;
 
   return (
@@ -141,7 +134,7 @@ export default function AccountsTab() {
           paid: 0,
         }}
       />
-      
+
       <View style={styles.content}>
         <SearchBar
           value={searchQuery}
@@ -150,18 +143,26 @@ export default function AccountsTab() {
         />
 
         <FlatList
-          data={filteredAccounts}
-          keyExtractor={(item) => item.id}
+          // 🛠️ CRITICAL FIX: Pass the ARRAY, not the function
+          data={filteredAccounts} 
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <AccountCard
               account={item}
               onPress={() => Alert.alert('Account Details', `Viewing ${item.name}`)}
             />
           )}
-          refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
+          // refreshControl={
+          //   <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
+          // }
+          ListEmptyComponent={
+            !loading && <Text style={{textAlign:'center', marginTop: 20, color: '#888'}}>No accounts found</Text>
           }
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
         />
       </View>
 
@@ -200,10 +201,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#7C3AED',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    // Updated for Web compatibility
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)', 
     elevation: 8,
   },
 });

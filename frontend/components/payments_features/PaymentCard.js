@@ -3,6 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import StatusBadge from '../shared/StatusBadge';
 
 export default function PaymentCard({ payment, onMarkPaid }) {
+    const cardStyle = [
+      styles.card,
+      payment.status === 'overdue' && styles.overdueCard, // <-- Conditional Red Style
+  ];
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -24,7 +29,7 @@ export default function PaymentCard({ payment, onMarkPaid }) {
         </View>
       </View>
 
-      {payment.status === 'pending' && (
+      {(payment.status === 'pending' || payment.status === 'overdue') && (
         <TouchableOpacity
           style={styles.button}
           onPress={() => onMarkPaid(payment.id)}
@@ -102,4 +107,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  overdueCard: {
+    backgroundColor: '#FEE2E2', // Very light red background
+    borderColor: '#F87171', // Red border for emphasis
+    borderWidth: 2,
+  },
 });

@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#7C3AED"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.digisol.paytrack"
@@ -22,6 +24,9 @@
         "backgroundColor": "#7C3AED"
       },
       "package": "com.digisol.paytrack"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

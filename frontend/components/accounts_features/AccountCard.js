@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StatusBadge from '../shared/StatusBadge';
 
-export default function AccountCard({ account, onPress }) {
+export default function AccountCard({ account, onPress, onShowLinkedUsers, onEdit, onDelete }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
@@ -16,7 +16,25 @@ export default function AccountCard({ account, onPress }) {
             <Text style={styles.accountNumber}>{account.accountNumber}</Text>
           </View>
         </View>
-        <StatusBadge status={account.status} />
+
+        <View style={styles.headerRight}>
+          <StatusBadge status={account.status} />
+
+          {/* EDIT BUTTON */}
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => onEdit(account)}
+          >
+            <Ionicons name="create-outline" size={18} color="#7C3AED" />
+          </TouchableOpacity>
+          {/* Delete button */}
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => onDelete(account.accountNumber)}
+          >
+    <Ionicons name="trash-outline" size={18} color="red" />
+  </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.details}>
@@ -45,11 +63,16 @@ export default function AccountCard({ account, onPress }) {
         </View>
       </View>
 
-      <View style={styles.linkedUsers}>
-        <Ionicons name="people-outline" size={16} color="#6B7280" />
-        <Text style={styles.linkedUsersText}>
-          {account.linkedUsers} linked user{account.linkedUsers > 1 ? 's' : ''}
-        </Text>
+      <View style={styles.rowBetween}>
+        <Text style={styles.label}>Linked Users</Text>
+
+        <TouchableOpacity
+          style={styles.linkedButton}
+          onPress={() => onShowLinkedUsers(account.accountNumber)}
+        >
+          <Ionicons name="people" size={18} color="#7C3AED" />
+          <Text style={styles.linkedText}>{account.linkedUsersCount}</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -69,17 +92,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F3F4F6',
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 16,
+    alignItems: 'flex-start',
   },
+
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  editButton: {
+    backgroundColor: '#EDE9FE',
+    padding: 6,
+    borderRadius: 8,
+  },
+
   avatar: {
     width: 48,
     height: 48,
@@ -93,6 +131,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+
   name: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -103,6 +142,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
+
   details: {
     gap: 10,
     marginBottom: 16,
@@ -116,6 +156,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4B5563',
   },
+
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -143,13 +184,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
   },
-  linkedUsers: {
+
+  rowBetween: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
   },
-  linkedUsersText: {
-    fontSize: 13,
-    color: '#6B7280',
+
+  linkedButton: {
+    flexDirection: 'row',
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
   },
+  linkedText: {
+    marginLeft: 6,
+    color: '#7C3AED',
+    fontWeight: '600',
+  },
+  deleteButton: {
+  backgroundColor: '#FEE2E2',
+  padding: 6,
+  borderRadius: 8,
+},
+
 });

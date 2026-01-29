@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import StatusBadge from '../shared/StatusBadge';
 
 export default function PaymentCard({ payment, onMarkPaid }) {
-    const cardStyle = [
-      styles.card,
-      payment.status === 'overdue' && styles.overdueCard, // <-- Conditional Red Style
-  ];
+  const cardStyle = [
+    styles.card,
+    payment.status === 'overdue' && styles.overdueCard,
+  ];
 
   return (
-    <View style={styles.card}>
+    <View style={cardStyle}>
       <View style={styles.header}>
         <View>
           <Text style={styles.name}>{payment.accountName}</Text>
@@ -24,15 +24,21 @@ export default function PaymentCard({ payment, onMarkPaid }) {
           <Text style={styles.amount}>{payment.amount}</Text>
         </View>
         <View style={styles.footerRight}>
-          <Text style={styles.label}>Due Date</Text>
-          <Text style={styles.dueDate}>{payment.dueDate}</Text>
+          <Text style={styles.label}>
+            {payment.status === 'paid' ? 'Paid Date' : 'Due Date'}
+          </Text>
+          <Text style={styles.dueDate}>
+            {payment.status === 'paid' && payment.paidDate 
+              ? payment.paidDate 
+              : payment.dueDate}
+          </Text>
         </View>
       </View>
 
       {(payment.status === 'pending' || payment.status === 'overdue') && (
         <TouchableOpacity
           style={styles.button}
-          onPress={() => onMarkPaid(payment.id)}
+          onPress={() => onMarkPaid(payment.accountNumber)}
         >
           <Text style={styles.buttonText}>Mark as Paid</Text>
         </TouchableOpacity>
@@ -108,8 +114,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   overdueCard: {
-    backgroundColor: '#FEE2E2', // Very light red background
-    borderColor: '#F87171', // Red border for emphasis
-    borderWidth: 2,
-  },
+    backgroundColor: '#FEE2E2',
+    borderColor: '#F87171',
+    borderWidth: 2,
+  },
 });

@@ -12,8 +12,9 @@ import {
 import Header from '../../components/shared/Header';
 import SearchBar from '../../components/shared/SearchBar';
 import PaymentCard from '../../components/payments_features/PaymentCard';
+import CONFIG from '../config';
 
-const API_URL = 'http://127.0.0.1:5000/api/services';
+const API_URL = `${CONFIG.API_BASE_URL}/api/services`;
 
 const PaymentsTab = () => {
   const [payments, setPayments] = useState([]);
@@ -45,7 +46,7 @@ const PaymentsTab = () => {
         amount: `${item.payment_amount.toLocaleString()} XAF`,
         dueDate: item.due_date,
         status: item.status,
-        paidDate: item.status === 'paid' ? item.paid_date : null,
+        paidDate: item.paid_date || null,
       }));
 
       setPayments(transformed);

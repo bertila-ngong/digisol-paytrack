@@ -34,38 +34,39 @@ api.interceptors.response.use(
 
 // 🔌 ACCOUNTS API - Connect your backend here
 export const accountsAPI = {
-  getAll: () => api.get('/accounts'),
-  getById: (id) => api.get(`/accounts/${id}`),
-  create: (accountData) => api.post('/accounts', accountData),
-  update: (id, accountData) => api.put(`/accounts/${id}`, accountData),
-  delete: (id) => api.delete(`/accounts/${id}`),
-  getFiltered: (filters) => api.get('/accounts', { params: filters }),
+  getAll: () => api.get('/api/accounts'),
+  getById: (id) => api.get(`/api/accounts/${id}`),
+  create: (accountData) => api.post('/api/accounts', accountData),
+  update: (id, accountData) => api.put(`/api/accounts/${id}`, accountData),
+  delete: (id) => api.delete(`/api/accounts/${id}`),
+  getFiltered: (filters) => api.get('/api/accounts', { params: filters }),
 };
 
 // 🔌 PAYMENTS API
 export const paymentsAPI = {
-  getAll: () => api.get('/payments'),
-  getByAccountId: (accountId) => api.get(`/payments/account/${accountId}`),
-  create: (paymentData) => api.post('/payments', paymentData),
-  update: (id, paymentData) => api.put(`/payments/${id}`, paymentData),
-  getHistory: (accountId) => api.get(`/payments/history/${accountId}`),
-  getOverdue: () => api.get('/payments/overdue'),
+  getAll: () => api.get('/api/payments'),
+  getByAccountId: (accountId) => api.get(`/api/payments/account/${accountId}`),
+  create: (paymentData) => api.post('/api/payments', paymentData),
+  update: (id, paymentData) => api.put(`/api/payments/${id}`, paymentData),
+  getHistory: (accountId) => api.get(`/api/payments/history/${accountId}`),
+  getOverdue: () => api.get('/api/payments/overdue'),
 };
 
 // 🔌 REMINDERS API
 export const remindersAPI = {
-  getAll: () => api.get('/reminders'),
-  getUpcoming: () => api.get('/reminders/upcoming'),
-  send: (reminderId) => api.post(`/reminders/${reminderId}/send`),
-  delete: (id) => api.delete(`/reminders/${id}`),
-  getDueToday: () => api.get('/reminders/due-today'),
+  getAll: () => api.get('/api/reminders'),
+  getUpcoming: () => api.get('/api/reminders/upcoming'),
+  sendEmail: (accountNumber) => api.post(`/api/services/send-reminder/${accountNumber}`),
+  sendSMS: (accountNumber) => api.post(`/api/services/send-sms-reminder/${accountNumber}`),
+  delete: (id) => api.delete(`/api/reminders/${id}`),
+  getDueToday: () => api.get('/api/reminders/due-today'),
 };
 
 // 🔌 USERS API (Linked Users)
 export const usersAPI = {
-  getByAccountId: (accountId) => api.get(`/users/account/${accountId}`),
-  linkToAccount: (accountId, userData) => api.post(`/users/link/${accountId}`, userData),
-  unlinkFromAccount: (accountId, userId) => api.delete(`/users/unlink/${accountId}/${userId}`),
+  getByAccountId: (accountId) => api.get(`/api/users/account/${accountId}`),
+  linkToAccount: (accountId, userData) => api.post(`/api/users/link/${accountId}`, userData),
+  unlinkFromAccount: (accountId, userId) => api.delete(`/api/users/unlink/${accountId}/${userId}`),
 };
 
 export default api;

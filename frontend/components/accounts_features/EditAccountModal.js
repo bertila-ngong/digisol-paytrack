@@ -11,20 +11,24 @@ import {
 const EditAccountModal = ({ visible, onClose, account, onSave }) => {
   const [form, setForm] = useState({
     accountNumber: "",
+    name: "",
+    email: "",
+    phone: "",
     dueDate: "",
     amount: "",
     location: "",
-    status: "",
   });
 
   useEffect(() => {
     if (account) {
       setForm({
         accountNumber: account.accountNumber,
+        name: account.name || "",
+        email: account.email || "",
+        phone: account.phone || "",
         dueDate: account.dueDate,
         amount: account.amount.replace(" XAF", "").replace(/,/g, ""),
         location: account.location || "",
-        status: account.status || "active",
       });
     }
   }, [account]);
@@ -39,7 +43,6 @@ const EditAccountModal = ({ visible, onClose, account, onSave }) => {
         <View style={styles.container}>
           <Text style={styles.title}>Edit Account</Text>
 
-          {/* LABELS ADDED */}
           <Text style={styles.label}>Account Number</Text>
           <TextInput
             style={styles.input}
@@ -47,6 +50,24 @@ const EditAccountModal = ({ visible, onClose, account, onSave }) => {
             onChangeText={(t) => setForm({ ...form, accountNumber: t })}
           />
 
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            value={form.name}
+            onChangeText={(t) => setForm({ ...form, name: t })}
+          />
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            value={form.email}
+            onChangeText={(t) => setForm({ ...form, email: t })}
+          />
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={form.phone}
+            onChangeText={(t) => setForm({ ...form, phone: t })}
+          />
           <Text style={styles.label}>Due Date</Text>
           <TextInput
             style={styles.input}
@@ -68,13 +89,6 @@ const EditAccountModal = ({ visible, onClose, account, onSave }) => {
             style={styles.input}
             value={form.location}
             onChangeText={(t) => setForm({ ...form, location: t })}
-          />
-
-          <Text style={styles.label}>Status</Text>
-          <TextInput
-            style={styles.input}
-            value={form.status}
-            onChangeText={(t) => setForm({ ...form, status: t })}
           />
 
           <View style={styles.row}>
@@ -106,6 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 20,
     borderRadius: 12,
+    maxHeight: "80%",
   },
   title: {
     fontSize: 20,

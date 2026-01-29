@@ -15,6 +15,7 @@ import AccountCard from '../../components/accounts_features/AccountCard';
 import AddAccountModal from '../../components/accounts_features/AddAccountModal';
 import LinkedUsersModal from '../../components/accounts_features/LinkedUsersModal';
 import EditAccountModal from "../../components/accounts_features/EditAccountModal";
+import CONFIG from '../config';
 
 const AccountsTab = () => {
   const [accounts, setAccounts] = useState([]);
@@ -39,7 +40,7 @@ const AccountsTab = () => {
   const getServices = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/services');
+      const response = await fetch(`${CONFIG.API_BASE_URL}/api/services`);
       const data = await response.json();
 
       let rawList = [];
@@ -65,8 +66,8 @@ const AccountsTab = () => {
           amount: item.payment_amount
             ? `${item.payment_amount.toLocaleString()} XAF`
             : '0 XAF',
-          status: primaryUser.status || 'active',
-          location: primaryUser.location || '',
+          status: item.status || 'pending',
+          location: item.location || primaryUser.location || '',
           linkedUsersCount: item.linked_users
             ? item.linked_users.length
             : 0,
@@ -102,18 +103,15 @@ const AccountsTab = () => {
   };
   
   const handleShowLinkedUsers = async (accountNumber) => {
-  setSelectedAccountNumber(accountNumber);
+    setSelectedAccountNumber(accountNumber);
 
-  const res = await fetch(`http://127.0.0.1:5000/api/services/${accountNumber}`);
-  const result = await res.json();
+    const res = await fetch(`${CONFIG.API_BASE_URL}/api/services/${accountNumber}`);
+    const result = await res.json();
 
-  setSelectedLinkedUsers(result.account.linked_users || []);
-  setLinkedUsersModalVisible(true);
-};
- 
+    setSelectedLinkedUsers(result.account.linked_users || []);
+    setLinkedUsersModalVisible(true);
+  };
 
-  // ✅ UPDATED — Add new account *and send to backend* (FireStore)
-  
   const handleAddAccount = async (accountData) => {
     try {
       // Convert amount to number for backend
@@ -128,19 +126,19 @@ const AccountsTab = () => {
         due_date: accountData.dueDate || '',
         payment_amount: amountNumber,
         location: accountData.location || '',
-        status: 'active',
         name: accountData.name || 'New User',
         linked_users: [
           {
             name: accountData.name || 'New User',
             email: accountData.email || '',
             phone: accountData.phone || '',
+            location: accountData.location || '',
           },
         ],
       };
 
       // Send POST request to backend
-      const response = await fetch('http://127.0.0.1:5000/api/services', {
+      const response = await fetch(`${CONFIG.API_BASE_URL}/api/services`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -158,7 +156,7 @@ const AccountsTab = () => {
       const primaryUser = saved.linked_users[0] || {};
 
       const newAccount = {
-        id: saved.id,
+        id: saved.account_number,
         accountNumber: saved.account_number,
         dueDate: saved.due_date,
         amount: `${saved.payment_amount.toLocaleString()} XAF`,
@@ -179,82 +177,117 @@ const AccountsTab = () => {
   };
 
   const overdueCount = accounts.filter((a) => a.status === 'overdue').length;
-  const handleEditAccount = (account) => {
-  setSelectedAccount(account);
-  setEditModalVisible(true);
-};
- // save updated account
- const handleSaveAccount = async (updated) => {
-  try {
-    const payload = {
-      account_number: updated.accountNumber,
-      due_date: updated.dueDate,
-      payment_amount: parseInt(updated.amount.replace(/\D/g, ""), 10),
-      location: updated.location,
-      status: updated.status,
-    };
-
-    const res = await fetch(
-      `http://127.0.0.1:5000/api/services/${updated.accountNumber}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    if (!res.ok) {
-      Alert.alert("Error", "Failed to update account");
-      return;
-    }
-
-    Alert.alert("Success", "Account updated");
-    setEditModalVisible(false);
-    getServices(); // refresh list
-
-  } catch (e) {
-    Alert.alert("Error", "Backend unreachable");
-  }
-};
-const handleDeleteAccount = async (accountNumber) => {
-  console.log("=== DELETE INITIATED ===");
-  console.log("Account Number:", accountNumber);
-  console.log("Making request to:", `http://127.0.0.1:5000/api/services/${accountNumber}`);
+  const paidCount = accounts.filter((a) => a.status === 'paid').length;
   
-  try {
-    const res = await fetch(
-      `http://127.0.0.1:5000/api/services/${accountNumber}`,
-      { 
-        method: "DELETE"
+  const handleEditAccount = (account) => {
+    setSelectedAccount(account);
+    setEditModalVisible(true);
+  };
+  
+  // save updated account
+  const handleSaveAccount = async (updated) => {
+    try {
+      const paymentAmount = parseInt(updated.amount.replace(/\D/g, ""), 10) || 0;
+      
+      // Update linked_users with the primary user info
+      const linkedUsers = [
+        {
+          name: updated.name || 'Unknown User',
+          email: updated.email || '',
+          phone: updated.phone || '',
+          location: updated.location || '',
+        },
+      ];
+
+      const payload = {
+        account_number: updated.accountNumber,
+        due_date: updated.dueDate,
+        payment_amount: paymentAmount,
+        location: updated.location,
+        name: updated.name,
+        email: updated.email, 
+        phone: updated.phone,
+        linked_users: linkedUsers,
+      };
+
+      console.log('Sending payload:', payload);
+
+      // Use the ORIGINAL account number from selectedAccount for the URL
+      // This ensures we find the correct document even if the account number is being changed
+      const originalAccountNumber = selectedAccount?.accountNumber || updated.accountNumber;
+      
+      const res = await fetch(
+        `${CONFIG.API_BASE_URL}/api/services/${originalAccountNumber}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      console.log('Response status:', res.status);
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Error response:', errorData);
+        Alert.alert("Error", errorData.message || "Failed to update account");
+        return;
       }
-    );
 
-    console.log("Response received:");
-    console.log("- Status:", res.status);
-    console.log("- OK:", res.ok);
+      const responseData = await res.json();
+      console.log('Success response:', responseData);
 
-    const data = await res.json();
-    console.log("- Data:", data);
-
-    if (!res.ok) {
-      console.log("Delete failed:", data.message);
-      Alert.alert("Error", data.message || "Failed to delete account");
-      return;
+      Alert.alert("Success", "Account updated successfully");
+      setEditModalVisible(false);
+      
+      // Refresh the list from the backend
+      await getServices();
+    } catch (e) {
+      console.error("Save error:", e);
+      Alert.alert("Error", "Backend unreachable: " + e.message);
     }
+  };
 
-    console.log("Delete successful, updating UI");
+  const handleDeleteAccount = async (accountNumber) => {
+    console.log("=== DELETE INITIATED ===");
+    console.log("Account Number:", accountNumber);
+    console.log("Making request to:", `${CONFIG.API_BASE_URL}/api/services/${accountNumber}`);
     
-    // Remove locally without full refresh
-    setAccounts((prev) =>
-      prev.filter((acc) => acc.accountNumber !== accountNumber)
-    );
+    try {
+      const res = await fetch(
+        `${CONFIG.API_BASE_URL}/api/services/${accountNumber}`,
+        { 
+          method: "DELETE"
+        }
+      );
 
-    Alert.alert("Success", "Account deleted successfully");
-  } catch (error) {
-    console.error("DELETE ERROR:", error);
-    Alert.alert("Error", `Unable to connect to backend: ${error.message}`);
-  }
-};
+      console.log("Response received:");
+      console.log("- Status:", res.status);
+      console.log("- OK:", res.ok);
+
+      const data = await res.json();
+      console.log("- Data:", data);
+
+      if (!res.ok) {
+        console.log("Delete failed:", data.message);
+        Alert.alert("Error", data.message || "Failed to delete account");
+        return;
+      }
+
+      console.log("Delete successful, updating UI");
+      
+      // Remove locally without full refresh
+      setAccounts((prev) =>
+        prev.filter((acc) => acc.accountNumber !== accountNumber)
+      );
+
+      Alert.alert("Success", "Account deleted successfully");
+    } catch (error) {
+      console.error("DELETE ERROR:", error);
+      Alert.alert("Error", `Unable to connect to backend: ${error.message}`);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Header
@@ -263,7 +296,7 @@ const handleDeleteAccount = async (accountNumber) => {
         stats={{
           total: accounts.length,
           overdue: overdueCount,
-          paid: 0,
+          paid: paidCount,
         }}
       />
 
@@ -285,8 +318,6 @@ const handleDeleteAccount = async (accountNumber) => {
              onEdit={handleEditAccount}
              onDelete={() => handleDeleteAccount(item.accountNumber)}
             />
-
-            
           )}
           ListEmptyComponent={
             !loading && (
@@ -316,19 +347,19 @@ const handleDeleteAccount = async (accountNumber) => {
         onSubmit={handleAddAccount}
       />
       <LinkedUsersModal
-  visible={linkedUsersModalVisible}
-  onClose={() => setLinkedUsersModalVisible(false)}
-  users={selectedLinkedUsers}
-  accountNumber={selectedAccountNumber}
-  onUserAdded={(updatedList) => setSelectedLinkedUsers(updatedList)}
-/>
-<EditAccountModal
-  visible={editModalVisible}
-  account={selectedAccount}
-  onClose={() => setEditModalVisible(false)}
-  onSave={handleSaveAccount}
-/>
-
+        visible={linkedUsersModalVisible}
+        onClose={() => setLinkedUsersModalVisible(false)}
+        users={selectedLinkedUsers}
+        accountNumber={selectedAccountNumber}
+        onUserAdded={(updatedList) => setSelectedLinkedUsers(updatedList)}
+        onRefresh={getServices}
+      />
+      <EditAccountModal
+        visible={editModalVisible}
+        account={selectedAccount}
+        onClose={() => setEditModalVisible(false)}
+        onSave={handleSaveAccount}
+      />
     </View>
   );
 };

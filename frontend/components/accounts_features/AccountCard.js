@@ -23,17 +23,23 @@ export default function AccountCard({ account, onPress, onShowLinkedUsers, onEdi
           {/* EDIT BUTTON */}
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => onEdit(account)}
+            onPress={(e) => {
+              e.stopPropagation();
+              onEdit(account);
+            }}
           >
             <Ionicons name="create-outline" size={18} color="#7C3AED" />
           </TouchableOpacity>
           {/* Delete button */}
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => onDelete(account.accountNumber)}
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete(account.accountNumber);
+            }}
           >
-    <Ionicons name="trash-outline" size={18} color="red" />
-  </TouchableOpacity>
+            <Ionicons name="trash-outline" size={18} color="red" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -68,7 +74,10 @@ export default function AccountCard({ account, onPress, onShowLinkedUsers, onEdi
 
         <TouchableOpacity
           style={styles.linkedButton}
-          onPress={() => onShowLinkedUsers(account.accountNumber)}
+          onPress={(e) => {
+            e.stopPropagation();
+            onShowLinkedUsers(account.accountNumber);
+          }}
         >
           <Ionicons name="people" size={18} color="#7C3AED" />
           <Text style={styles.linkedText}>{account.linkedUsersCount}</Text>
@@ -205,9 +214,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   deleteButton: {
-  backgroundColor: '#FEE2E2',
-  padding: 6,
-  borderRadius: 8,
-},
-
+    backgroundColor: '#FEE2E2',
+    padding: 6,
+    borderRadius: 8,
+  },
 });

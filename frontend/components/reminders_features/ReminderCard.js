@@ -1,50 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import StatusBadge from '../shared/StatusBadge';
 
 export default function ReminderCard({ reminder, onSend }) {
-  const isSent = reminder.sent;
-
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <View>
           <Text style={styles.name}>{reminder.accountName}</Text>
-          <View style={styles.typeContainer}>
-            <Ionicons
-              name={reminder.type === 'email' ? 'mail-outline' : 'call-outline'}
-              size={16}
-              color="#7C3AED"
-            />
-            <Text style={styles.type}>
-              {reminder.type.toUpperCase()} Reminder
-            </Text>
-          </View>
+          <Text style={styles.accountNumber}>Acc: {reminder.accountNumber}</Text>
         </View>
-
-        {/* Custom Badge - NOT reusing Payment's StatusBadge */}
-        <View style={[styles.statusBadge, isSent ? styles.sentBadge : styles.pendingBadge]}>
-          <Text style={[styles.statusText, isSent ? styles.sentText : styles.pendingText]}>
-            {isSent ? 'SENT' : 'PENDING'}
-          </Text>
-        </View>
+        <StatusBadge status={reminder.status} />
       </View>
 
-      <View style={styles.footer}>
-        <View>
-          <Text style={styles.label}>Payment Due</Text>
-          <Text style={styles.dueDate}>{reminder.dueDate}</Text>
-        </View>
+      <View style={styles.details}>
+        <Text style={styles.label}>Amount Due</Text>
+        <Text style={styles.amount}>{reminder.amount}</Text>
 
-        {isSent && reminder.sentDate && (
-          <View style={styles.footerRight}>
-            <Text style={styles.label}>Sent On</Text>
-            <Text style={styles.sentDate}>{reminder.sentDate}</Text>
-          </View>
-        )}
+        <Text style={styles.label}>Due Date</Text>
+        <Text style={styles.dueDate}>{reminder.dueDate}</Text>
       </View>
 
-      {!isSent && (
+      {reminder.status !== 'paid' && (
         <TouchableOpacity style={styles.button} onPress={() => onSend(reminder.id)}>
           <Text style={styles.buttonText}>Send Reminder Now</Text>
         </TouchableOpacity>
@@ -77,58 +54,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1F2937',
-    marginBottom: 6,
   },
-  typeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  type: {
+  accountNumber: {
     fontSize: 13,
     color: '#6B7280',
+    marginTop: 2,
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  sentBadge: {
-    backgroundColor: '#DCFCE7',
-  },
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  sentText: {
-    color: '#166534',
-  },
-  pendingText: {
-    color: '#92400E',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  footerRight: {
-    alignItems: 'flex-end',
+  details: {
+    gap: 8,
+    marginBottom: 12,
   },
   label: {
     fontSize: 11,
     color: '#9CA3AF',
-    marginBottom: 4,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  amount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#7C3AED',
   },
   dueDate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  sentDate: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1F2937',
@@ -138,7 +85,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
   buttonText: {
     color: 'white',

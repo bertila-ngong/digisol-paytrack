@@ -10,14 +10,16 @@ import {
   Linking,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/shared/Header';
 import SearchBar from '../../components/shared/SearchBar';
+import StatusBadge from '../../components/shared/StatusBadge';
+import CONFIG from '../config';
 
-// CHANGE THIS BASED ON YOUR DEVICE
-const API_URL = 'http://127.0.0.1:5000/api/services';        // iOS Simulator
-// const API_URL = 'http://10.0.2.2:5000/api/services';     // Android Emulator
+// API endpoint using centralized config
+const API_URL = `${CONFIG.API_BASE_URL}/api/services`;
 
 export default function RemindersTab() {
   const [accounts, setAccounts] = useState([]);
@@ -90,31 +92,71 @@ export default function RemindersTab() {
     setModalVisible(true);
   };
 
-  const sendEmail = () => {
-    if (!selectedAccount?.email) {
-      Alert.alert('No Email', 'This customer has no email address');
+  const sendEmail = async () => {
+    if (!selectedAccount?.accountNumber) {
+      Alert.alert('Error', 'Account number is missing');
+      setModalVisible(false);
       return;
     }
-    const url = `mailto:${selectedAccount.email}?subject=Payment Reminder&body=Hello ${selectedAccount.name},\n\nThis is a friendly reminder that your payment of ${selectedAccount.amount} is due on ${selectedAccount.dueDate}.\n\nThank you!`;
-    Linking.openURL(url);
+
+    try {
+      const response = await fetch(`${API_URL.replace('/services', '')}/services/send-reminder/${selectedAccount.accountNumber}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        Alert.alert('Success', 'Reminder email sent successfully!');
+        fetchData(); // Refresh data
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send reminder');
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      Alert.alert('Error', 'Failed to send reminder: ' + error.message);
+    }
+
     setModalVisible(false);
   };
 
-  const sendSMS = () => {
-    if (!selectedAccount?.phone) {
-      Alert.alert('No Phone', 'This customer has no phone number');
+  const sendSMS = async () => {
+    if (!selectedAccount?.accountNumber) {
+      Alert.alert('Error', 'Account number is missing');
+      setModalVisible(false);
       return;
     }
-    const url = Platform.OS === 'ios'
-      ? `sms:${selectedAccount.phone}`
-      : `sms:${selectedAccount.phone}?body=Hello ${selectedAccount.name}, your payment of ${selectedAccount.amount} is due on ${selectedAccount.dueDate}. Thank you!`;
-    Linking.openURL(url);
+
+    try {
+      const response = await fetch(`${API_URL.replace('/services', '')}/services/send-sms-reminder/${selectedAccount.accountNumber}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        Alert.alert('Success', 'SMS reminder sent successfully!');
+        fetchData(); // Refresh data
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send SMS');
+      }
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      Alert.alert('Error', 'Failed to send SMS: ' + error.message);
+    }
+
     setModalVisible(false);
   };
 
   const totalCount = accounts.length;
 
-  if (-initialLoading) {
+  if (initialLoading) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#7C3AED" />
@@ -166,20 +208,13 @@ export default function RemindersTab() {
                   <Text style={styles.name}>{item.name}</Text>
                   <Text style={styles.account}>Acc: {item.accountNumber}</Text>
                 </View>
-                <View style={[
-                  styles.statusBadge,
-                  item.status === 'paid' ? styles.paidBadge :
-                  item.status === 'overdue' ? styles.overdueBadge : styles.pendingBadge
-                ]}>
-                  <Text style={styles.statusText}>
-                    {item.status.toUpperCase()}
-                  </Text>
-                </View>
+                <StatusBadge status={item.status} />
               </View>
 
               <View style={styles.cardBody}>
                 <Text style={styles.label}>Amount Due</Text>
                 <Text style={styles.amount}>{item.amount}</Text>
+                
                 <Text style={styles.label}>Due Date</Text>
                 <Text style={styles.dueDate}>{item.dueDate}</Text>
               </View>
@@ -232,37 +267,166 @@ export default function RemindersTab() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  content: { flex: 1, padding: 16 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
-  tabRow: { flexDirection: 'row', marginVertical: 16, backgroundColor: '#E5E7EB', borderRadius: 30, padding: 4 },
-  tab: { flex: 1, paddingVertical: 12, borderRadius: 26, alignItems: 'center' },
-  activeTab: { backgroundColor: '#7C3AED' },
-  tabText: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  activeTabText: { color: '#fff' },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  name: { fontSize: 17, fontWeight: 'bold', color: '#1F2937' },
-  account: { fontSize: 13, color: '#6B7280', marginTop: 4 },
-  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  paidBadge: { backgroundColor: '#DCFCE7' },
-  pendingBadge: { backgroundColor: '#FEF3C7' },
-  overdueBadge: { backgroundColor: '#FEE2E2' },
-  statusText: { fontSize: 12, fontWeight: '600', color: '#166534' },
-  cardBody: { gap: 8 },
-  label: { fontSize: 13, color: '#9CA3AF' },
-  amount: { fontSize: 18, fontWeight: 'bold', color: '#1F2937' },
-  dueDate: { fontSize: 15, color: '#4B5563' },
-  sendButton: { backgroundColor: '#7C3AED', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
-  sendButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  empty: { textAlign: 'center', marginTop: 50, color: '#9CA3AF', fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', width: '88%', borderRadius: 20, padding: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 10 },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1F2937', marginBottom: 8 },
-  modalSubtitle: { fontSize: 15, color: '#6B7280', marginBottom: 24 },
-  optionButton: { width: '100%', backgroundColor: '#F3F4F6', borderRadius: 16, padding: 18, marginVertical: 8, alignItems: 'center' },
-  optionText: { fontSize: 17, fontWeight: '600', marginTop: 8, color: '#1F2937' },
-  optionSubtext: { fontSize: 14, color: '#6B7280', marginTop: 4 },
-  cancelButton: { marginTop: 20 },
-  cancelText: { fontSize: 16, color: '#7C3AED', fontWeight: '600' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F9FAFB' 
+  },
+  content: { 
+    flex: 1, 
+    padding: 16 
+  },
+  loader: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#F9FAFB' 
+  },
+  tabRow: { 
+    flexDirection: 'row', 
+    marginVertical: 16, 
+    backgroundColor: '#E5E7EB', 
+    borderRadius: 30, 
+    padding: 4 
+  },
+  tab: { 
+    flex: 1, 
+    paddingVertical: 12, 
+    borderRadius: 26, 
+    alignItems: 'center' 
+  },
+  activeTab: { 
+    backgroundColor: '#7C3AED' 
+  },
+  tabText: { 
+    fontSize: 15, 
+    fontWeight: '600', 
+    color: '#374151' 
+  },
+  activeTabText: { 
+    color: '#fff' 
+  },
+  card: { 
+    backgroundColor: '#fff', 
+    borderRadius: 16, 
+    padding: 16, 
+    marginBottom: 12, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 8, 
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  cardHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    marginBottom: 16 
+  },
+  name: { 
+    fontSize: 17, 
+    fontWeight: 'bold', 
+    color: '#1F2937' 
+  },
+  account: { 
+    fontSize: 13, 
+    color: '#6B7280', 
+    marginTop: 4 
+  },
+  cardBody: { 
+    gap: 8,
+    marginBottom: 12,
+  },
+  label: { 
+    fontSize: 11, 
+    color: '#9CA3AF',
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  amount: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#7C3AED',
+  },
+  dueDate: { 
+    fontSize: 15, 
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  sendButton: { 
+    backgroundColor: '#7C3AED', 
+    padding: 14, 
+    borderRadius: 12, 
+    alignItems: 'center', 
+    marginTop: 12,
+  },
+  sendButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  empty: { 
+    textAlign: 'center', 
+    marginTop: 50, 
+    color: '#9CA3AF', 
+    fontSize: 16 
+  },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  modalContent: { 
+    backgroundColor: '#fff', 
+    width: '88%', 
+    borderRadius: 20, 
+    padding: 24, 
+    alignItems: 'center', 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 10 }, 
+    shadowOpacity: 0.25, 
+    shadowRadius: 20, 
+    elevation: 10 
+  },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: '#1F2937', 
+    marginBottom: 8 
+  },
+  modalSubtitle: { 
+    fontSize: 15, 
+    color: '#6B7280', 
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  optionButton: { 
+    width: '100%', 
+    backgroundColor: '#F3F4F6', 
+    borderRadius: 16, 
+    padding: 18, 
+    marginVertical: 8, 
+    alignItems: 'center' 
+  },
+  optionText: { 
+    fontSize: 17, 
+    fontWeight: '600', 
+    marginTop: 8, 
+    color: '#1F2937' 
+  },
+  optionSubtext: { 
+    fontSize: 14, 
+    color: '#6B7280', 
+    marginTop: 4 
+  },
+  cancelButton: { 
+    marginTop: 20 
+  },
+  cancelText: { 
+    fontSize: 16, 
+    color: '#7C3AED', 
+    fontWeight: '600' 
+  },
 });
